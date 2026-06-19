@@ -54,6 +54,9 @@ type ChatListProps = {
   onDiagnose?: () => void
   onDisconnect?: () => void
   onFactoryReset?: () => void
+  instanceStatus?: string
+  onConnectClick?: () => void
+  isOwner?: boolean
 }
 
 const SKELETON_ROWS = 6
@@ -90,6 +93,9 @@ export function ChatList({
   onDiagnose,
   onDisconnect,
   onFactoryReset,
+  instanceStatus,
+  onConnectClick,
+  isOwner,
 }: ChatListProps) {
   const safeChats = chats || []
   const [searchTerm, setSearchTerm] = useState('')
@@ -142,6 +148,49 @@ export function ChatList({
   return (
     <div className={cn('flex flex-col h-full bg-white border-r border-border', className)}>
       <div className="p-4 border-b border-border flex flex-col gap-4 bg-background/50 backdrop-blur-sm sticky top-0 z-10">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-serif font-semibold text-primary">Conversas</h2>
+          {instanceStatus === 'connected' ? (
+            <div
+              className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-emerald-50/50 text-emerald-600 border border-emerald-100/50 text-[11px] font-medium"
+              title="WhatsApp Conectado"
+            >
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.5)]" />
+              <span>Conectado</span>
+            </div>
+          ) : instanceStatus ? (
+            <button
+              onClick={isOwner ? onConnectClick : undefined}
+              className={cn(
+                'flex items-center gap-1.5 px-2 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-200 text-[11px] font-medium transition-colors',
+                isOwner && 'hover:bg-amber-100 active:bg-amber-200 cursor-pointer',
+              )}
+              title={isOwner ? 'Clique para conectar o WhatsApp' : 'WhatsApp Desconectado'}
+            >
+              <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span>Desconectado</span>
+            </button>
+          ) : null}
+        </div>
+
+        {instanceStatus && instanceStatus !== 'connected' && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center justify-between gap-2 shadow-sm">
+            <p className="text-[11px] text-amber-800 font-medium leading-tight">
+              O WhatsApp não está conectado. As mensagens não serão enviadas ou recebidas.
+            </p>
+            {isOwner && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs bg-white hover:bg-amber-50 border-amber-200 text-amber-700 shrink-0"
+                onClick={onConnectClick}
+              >
+                Conectar
+              </Button>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

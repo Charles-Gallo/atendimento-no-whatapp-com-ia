@@ -93,7 +93,7 @@ export default function Conversas() {
     connectingSince,
     generateQrCode,
     disconnect,
-  } = useQrConnection(undefined, instance)
+  } = useQrConnection(() => setIsQrModalOpen(false), instance)
 
   // Rastreia se rawState passou por 'qrcode' nesta sessão.
   // Usado para distinguir "boot noise" da Evolution API (que retorna
@@ -215,14 +215,6 @@ export default function Conversas() {
 
     return 'error'
   }, [diagnosticResult])
-
-  useEffect(() => {
-    if (!loadingInstance && !instance) {
-      if (!qrCodeBase64 && !isGenerating && pollErrors === 0) {
-        generateQrCode()
-      }
-    }
-  }, [instance, loadingInstance, qrCodeBase64, isGenerating, pollErrors, generateQrCode])
 
   const activeConversation = React.useMemo(() => {
     return conversations.find((c) => c.id === activeChatId) || null
@@ -362,75 +354,28 @@ export default function Conversas() {
   // do QR estar pronto) não oculte a tela de QR prematuramente.
   const isConnecting = !isConnected && rawState === 'connecting' && hadQrcodeStateRef.current
 
-  if (!instance || (!isConnected && !isConnecting)) {
-    if (role !== 'owner') {
-      return (
-        <div className="h-[calc(100vh-8rem)] animate-fade-in flex items-center justify-center bg-background rounded-2xl shadow-elevation border border-border overflow-hidden">
-          <div className="glass-card p-8 flex flex-col items-center justify-center text-center max-w-md w-full mx-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-6">
-              <MessageSquare className="w-8 h-8" />
-            </div>
-            <h2 className="font-serif text-2xl font-semibold text-foreground mb-4">
-              Aguardando WhatsApp da equipe
-            </h2>
-            <p className="text-sm text-muted-foreground text-balance">
-              O administrador da conta precisa conectar um número de WhatsApp antes que você possa
-              visualizar as conversas.
-            </p>
-          </div>
-        </div>
-      )
-    }
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false)
 
+  useEffect(() => {
+    if (isQrModalOpen && !instance && !qrCodeBase64 && !isGenerating && pollErrors === 0) {
+      generateQrCode()
+    }
+  }, [isQrModalOpen, instance, qrCodeBase64, isGenerating, pollErrors, generateQrCode])
+
+  if (!instance && role !== 'owner') {
     return (
       <div className="h-[calc(100vh-8rem)] animate-fade-in flex items-center justify-center bg-background rounded-2xl shadow-elevation border border-border overflow-hidden">
         <div className="glass-card p-8 flex flex-col items-center justify-center text-center max-w-md w-full mx-4">
-          <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white mb-6">
-            <QrCode className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-6">
+            <MessageSquare className="w-8 h-8" />
           </div>
-          <h2 className="font-serif text-2xl font-semibold text-primary mb-4">
-            Conecte seu WhatsApp
+          <h2 className="font-serif text-2xl font-semibold text-foreground mb-4">
+            Aguardando WhatsApp da equipe
           </h2>
-          <div className="w-64 h-64 bg-white rounded-xl border border-border flex items-center justify-center mb-6 overflow-hidden">
-            {isGenerating ? (
-              <div className="flex flex-col items-center justify-center space-y-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="text-sm font-medium text-primary animate-pulse">Gerando código...</p>
-              </div>
-            ) : qrCodeBase64 ? (
-              <img
-                src={
-                  qrCodeBase64.startsWith('data:')
-                    ? qrCodeBase64
-                    : `data:image/png;base64,${qrCodeBase64}`
-                }
-                alt="QR Code"
-                className="w-56 h-56 object-contain mix-blend-multiply"
-              />
-            ) : pollErrors >= 5 ? (
-              <div className="flex flex-col items-center justify-center space-y-4 p-4 text-center">
-                <p className="text-sm text-destructive font-medium">Conexão instável</p>
-                <Button variant="outline" onClick={generateQrCode}>
-                  Tentar novamente
-                </Button>
-              </div>
-            ) : instance ? (
-              <div className="flex flex-col items-center justify-center space-y-4 p-4 text-center">
-                <QrCode className="w-12 h-12 text-muted-foreground/30" />
-                <p className="text-sm text-muted-foreground font-medium">Aparelho desconectado</p>
-                <Button variant="default" onClick={generateQrCode}>
-                  Gerar novo QR Code
-                </Button>
-              </div>
-            ) : (
-              <QrCode className="w-16 h-16 text-muted-foreground/30" />
-            )}
-          </div>
-          {qrCodeBase64 && (
-            <p className="text-sm text-muted-foreground text-balance">
-              Abra o WhatsApp no seu celular, acesse "Aparelhos Conectados" e aponte a câmera.
-            </p>
-          )}
+          <p className="text-sm text-muted-foreground text-balance">
+            O administrador da conta precisa conectar um número de WhatsApp antes que você possa
+            visualizar as conversas.
+          </p>
         </div>
       </div>
     )
@@ -471,6 +416,9 @@ export default function Conversas() {
                 role === 'owner' && instance ? () => disconnect(instance.instance_name) : undefined
               }
               onFactoryReset={role === 'owner' ? () => setIsResetConfirmOpen(true) : undefined}
+              instanceStatus={instance?.status}
+              onConnectClick={() => setIsQrModalOpen(true)}
+              isOwner={role === 'owner'}
             />
           </div>
         </div>
@@ -559,6 +507,72 @@ export default function Conversas() {
           </div>
         </div>
       )}
+
+      <Dialog open={isQrModalOpen} onOpenChange={setIsQrModalOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-primary" />
+              Conectar WhatsApp
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-sm">
+              Abra o WhatsApp no seu celular, acesse "Aparelhos Conectados" e aponte a câmera para o
+              QR Code abaixo.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col items-center justify-center py-6">
+            <div className="w-64 h-64 bg-white rounded-xl border border-border flex items-center justify-center overflow-hidden">
+              {isGenerating ? (
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                  <p className="text-sm font-medium text-primary animate-pulse">
+                    Gerando código...
+                  </p>
+                </div>
+              ) : qrCodeBase64 ? (
+                <img
+                  src={
+                    qrCodeBase64.startsWith('data:')
+                      ? qrCodeBase64
+                      : `data:image/png;base64,${qrCodeBase64}`
+                  }
+                  alt="QR Code"
+                  className="w-56 h-56 object-contain mix-blend-multiply"
+                />
+              ) : pollErrors >= 5 ? (
+                <div className="flex flex-col items-center justify-center space-y-4 p-4 text-center">
+                  <p className="text-sm text-destructive font-medium">Conexão instável</p>
+                  <Button variant="outline" onClick={generateQrCode}>
+                    Tentar novamente
+                  </Button>
+                </div>
+              ) : instance ? (
+                <div className="flex flex-col items-center justify-center space-y-4 p-4 text-center">
+                  <QrCode className="w-12 h-12 text-muted-foreground/30" />
+                  <p className="text-sm text-muted-foreground font-medium">Aparelho desconectado</p>
+                  <Button variant="default" onClick={generateQrCode}>
+                    Gerar novo QR Code
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center space-y-4 p-4 text-center">
+                  <QrCode className="w-12 h-12 text-muted-foreground/30" />
+                  <Button variant="default" onClick={generateQrCode}>
+                    Gerar QR Code
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <DialogFooter className="sm:justify-end">
+            <Button variant="outline" onClick={() => setIsQrModalOpen(false)}>
+              Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog
         open={isResetConfirmOpen}

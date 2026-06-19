@@ -82,7 +82,18 @@ export function useQrConnection(
 
   useEffect(() => {
     let interval: any
-    if (instanceName && pollErrors < 5) {
+    const needsPolling =
+      existingInstance?.status === 'qrcode' ||
+      existingInstance?.status === 'creating' ||
+      qrCodeBase64 ||
+      rawState === 'connecting'
+
+    if (
+      instanceName &&
+      pollErrors < 5 &&
+      existingInstance?.status !== 'connected' &&
+      needsPolling
+    ) {
       interval = setInterval(async () => {
         try {
           const res = await consultarStatusInstancia(instanceName)
@@ -97,10 +108,6 @@ export function useQrConnection(
           if (res.status === 'connected') {
             clearInterval(interval)
             setQrCodeBase64(null)
-            toast({
-              title: 'WhatsApp conectado com sucesso!',
-              className: 'bg-green-50 text-green-900 border-green-200',
-            })
             if (onConnected) onConnected()
           } else if (res.status === 'qrcode' && res.qrcodeBase64) {
             setQrCodeBase64(res.qrcodeBase64)
@@ -112,7 +119,15 @@ export function useQrConnection(
       }, 3000)
     }
     return () => clearInterval(interval)
-  }, [instanceName, pollErrors, toast, onConnected])
+  }, [
+    instanceName,
+    pollErrors,
+    toast,
+    onConnected,
+    existingInstance?.status,
+    qrCodeBase64,
+    rawState,
+  ])
 
   useEffect(() => {
     if (pollErrors === 5) {
