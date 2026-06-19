@@ -50,7 +50,7 @@ migrate(
         { name: 'start_date', type: 'date' },
         { name: 'end_date', type: 'date' },
         { name: 'message_count', type: 'number' },
-        { name: 'status', type: 'select', selectValues: ['active', 'expired', 'trial'] },
+        { name: 'status', type: 'select', values: ['active', 'expired', 'trial'], maxSelect: 1 },
         { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
         { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
       ],
