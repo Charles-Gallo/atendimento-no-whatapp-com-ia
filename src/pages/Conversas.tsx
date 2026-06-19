@@ -68,6 +68,7 @@ export default function Conversas() {
     showArchived,
   )
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false)
 
   // Contatos do CRM da instância ativa: quando uma conversa tem um contato
   // no CRM, o nome salvo no CRM tem prioridade sobre o nome do WhatsApp
@@ -94,6 +95,12 @@ export default function Conversas() {
     generateQrCode,
     disconnect,
   } = useQrConnection(() => setIsQrModalOpen(false), instance)
+
+  useEffect(() => {
+    if (isQrModalOpen && !instance && !qrCodeBase64 && !isGenerating && pollErrors === 0) {
+      generateQrCode()
+    }
+  }, [isQrModalOpen, instance, qrCodeBase64, isGenerating, pollErrors, generateQrCode])
 
   // Rastreia se rawState passou por 'qrcode' nesta sessão.
   // Usado para distinguir "boot noise" da Evolution API (que retorna
@@ -353,14 +360,6 @@ export default function Conversas() {
   // sessão — garante que o boot noise da Evolution (state='connecting' antes
   // do QR estar pronto) não oculte a tela de QR prematuramente.
   const isConnecting = !isConnected && rawState === 'connecting' && hadQrcodeStateRef.current
-
-  const [isQrModalOpen, setIsQrModalOpen] = useState(false)
-
-  useEffect(() => {
-    if (isQrModalOpen && !instance && !qrCodeBase64 && !isGenerating && pollErrors === 0) {
-      generateQrCode()
-    }
-  }, [isQrModalOpen, instance, qrCodeBase64, isGenerating, pollErrors, generateQrCode])
 
   if (!instance && role !== 'owner') {
     return (
