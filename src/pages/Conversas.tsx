@@ -49,6 +49,7 @@ import { Input } from '@/components/ui/input'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/hooks/use-auth'
 import { useCurrentAccount } from '@/hooks/use-current-account'
+import pb from '@/lib/pocketbase/client'
 import { useHistorySync } from '@/hooks/use-history-sync'
 import { useCrmContatos } from '@/hooks/use-crm'
 
@@ -126,8 +127,8 @@ export default function Conversas() {
   const [resetConfirmText, setResetConfirmText] = useState('')
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { signOut } = useAuth()
-  const { role } = useCurrentAccount()
+  const { user, signOut } = useAuth()
+  const { role, account } = useCurrentAccount()
 
   const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null)
 
@@ -235,6 +236,46 @@ export default function Conversas() {
     isImportingHistory,
   )
 
+  const processedMessageIdsRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (activeConversation && activeConversation.unread_count > 0 && rawMessages.length > 0) {
+      const unreadCount = activeConversation.unread_count
+      const unreadMsgs = rawMessages
+        .filter((m) => !m.from_me && m.message_id)
+        .slice(-unreadCount)
+        .filter((m) => !processedMessageIdsRef.current.has(m.message_id as string))
+
+      if (unreadMsgs.length === 0) return
+
+      unreadMsgs.forEach((m) => processedMessageIdsRef.current.add(m.message_id as string))
+
+      const messageIds = unreadMsgs.map((m) => m.message_id).join(',')
+      const conversationId = activeConversation.id
+      const instanceName = activeConversation.instance_name
+      const remoteJid = activeConversation.remote_jid
+
+      pb.collection('conversations')
+        .update(conversationId, { unread_count: 0 }, { requestKey: null })
+        .catch(console.error)
+
+      if (user?.id && account?.id) {
+        pb.collection('mark_read_queue')
+          .create(
+            {
+              user_id: user.id,
+              account_id: account.id,
+              instance_name: instanceName,
+              remote_jid: remoteJid,
+              message_ids: messageIds,
+            },
+            { requestKey: null },
+          )
+          .catch(console.error)
+      }
+    }
+  }, [activeConversation, rawMessages, user?.id, account?.id])
+
   const { readyConversations, pendingCount } = React.useMemo(() => {
     let pending = 0
     const ready: typeof conversations = []
@@ -250,9 +291,14 @@ export default function Conversas() {
     () =>
       conversationsToChats(readyConversations).map((chat) => {
         const crmName = crmNameByJid.get(chat.remote_jid)
-        return crmName ? { ...chat, name: crmName } : chat
+        const isCurrentActive = chat.id === activeChatId
+        const baseChat = crmName ? { ...chat, name: crmName } : { ...chat }
+        if (isCurrentActive) {
+          baseChat.unread = 0
+        }
+        return baseChat
       }),
-    [readyConversations, crmNameByJid],
+    [readyConversations, crmNameByJid, activeChatId],
   )
 
   const activeChatWithMessages = React.useMemo(() => {
