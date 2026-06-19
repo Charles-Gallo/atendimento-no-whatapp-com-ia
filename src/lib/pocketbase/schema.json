@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-19T20:15:11.123Z",
+  "generatedAt": "2026-06-19T20:49:38.498Z",
   "collections": [
     {
       "name": "users",
@@ -1413,7 +1413,7 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["active", "expired", "trial"]
+          "selectValues": ["active", "expired", "trial", "paused", "inactive"]
         },
         {
           "name": "created",
