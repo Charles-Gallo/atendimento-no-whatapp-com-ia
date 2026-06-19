@@ -43,7 +43,7 @@ migrate(
           name: 'account_id',
           type: 'relation',
           required: true,
-          collectionId: 'accounts',
+          collectionId: app.findCollectionByNameOrId('accounts').id,
           maxSelect: 1,
         },
         { name: 'plan_id', type: 'relation', required: true, collectionId: plans.id, maxSelect: 1 },

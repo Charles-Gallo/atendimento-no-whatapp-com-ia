@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-19T18:22:19.824Z",
+  "generatedAt": "2026-06-19T18:28:08.206Z",
   "collections": [
     {
       "name": "users",
@@ -37,6 +37,12 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "is_agency",
+          "type": "bool",
+          "required": false,
+          "system": false
         }
       ],
       "indexes": [
@@ -1288,6 +1294,143 @@
         "CREATE INDEX idx_crm_stages_account ON crm_stages (account_id)",
         "CREATE UNIQUE INDEX idx_crm_stages_acc_key ON crm_stages (account_id, key)"
       ]
+    },
+    {
+      "name": "plans",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != '' && @request.auth.is_agency = true",
+        "update": "@request.auth.id != '' && @request.auth.is_agency = true",
+        "delete": "@request.auth.id != '' && @request.auth.is_agency = true"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "expiration_days",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "max_users",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "max_messages_month",
+          "type": "number",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "price_monthly",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "is_active",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
+    },
+    {
+      "name": "subscriptions",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != '' && (@request.auth.is_agency = true || account_id.account_members_via_account_id.user_id ?= @request.auth.id)",
+        "view": "@request.auth.id != '' && (@request.auth.is_agency = true || account_id.account_members_via_account_id.user_id ?= @request.auth.id)",
+        "create": "@request.auth.id != '' && @request.auth.is_agency = true",
+        "update": "@request.auth.id != '' && @request.auth.is_agency = true",
+        "delete": null
+      },
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "accounts"
+        },
+        {
+          "name": "plan_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "plans"
+        },
+        {
+          "name": "start_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "end_date",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "message_count",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["active", "expired", "trial"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": []
     }
   ]
 }
