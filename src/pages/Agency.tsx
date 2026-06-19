@@ -250,8 +250,12 @@ function CustomersManager() {
             return (
               <TableRow key={s.id}>
                 <TableCell>
-                  <div className="font-medium">{acc?.name}</div>
-                  <div className="text-xs text-muted-foreground">{owner?.email}</div>
+                  <div className="font-medium">
+                    {owner?.name || owner?.email || 'Cliente sem nome'}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {owner?.email || 'Email não disponível'}
+                  </div>
                 </TableCell>
                 <TableCell>{plan?.name}</TableCell>
                 <TableCell>
