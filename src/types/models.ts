@@ -72,6 +72,7 @@ export interface User {
   name: string
   email: string
   avatar: string
+  is_agency?: boolean
 }
 
 export interface WhatsappInstance {

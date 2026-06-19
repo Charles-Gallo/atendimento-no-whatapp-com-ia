@@ -15,6 +15,7 @@ import Agentes from './pages/Agentes'
 import Tarefas from './pages/Tarefas'
 import Equipe from './pages/Equipe'
 import NotFound from './pages/NotFound'
+import Agency from './pages/Agency'
 
 const ProtectedRoute = () => {
   const { user, loading } = useAuth()
@@ -43,6 +44,7 @@ const App = () => (
                 <Route path="/agentes" element={<Agentes />} />
                 <Route path="/tarefas" element={<Tarefas />} />
                 <Route path="/equipe" element={<Equipe />} />
+                <Route path="/agencia" element={<Agency />} />
               </Route>
             </Route>
 

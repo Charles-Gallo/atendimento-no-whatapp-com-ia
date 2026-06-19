@@ -76,6 +76,31 @@ routerAdd(
       accountId = member.getString('account_id')
     } catch (_) {}
 
+    if (accountId) {
+      try {
+        const sub = $app.findFirstRecordByFilter('subscriptions', 'account_id = {:accountId}', {
+          accountId,
+        })
+        const plan = $app.findRecordById('plans', sub.getString('plan_id'))
+
+        const endStr = sub.getString('end_date')
+        if (endStr && new Date(endStr) < new Date()) {
+          throw new ForbiddenError('Plano expirado. Não é possível enviar mensagens.')
+        }
+
+        const currentMsgs = sub.getInt('message_count')
+        const maxMsgs = plan.getInt('max_messages_month')
+        if (currentMsgs >= maxMsgs) {
+          throw new ForbiddenError('Limite de mensagens do plano atingido.')
+        }
+
+        sub.set('message_count', currentMsgs + 1)
+        $app.save(sub)
+      } catch (err) {
+        if (err instanceof ForbiddenError) throw err
+      }
+    }
+
     const msgCol = $app.findCollectionByNameOrId('whatsapp_messages')
     const msgRecord = new Record(msgCol)
     msgRecord.set('user_id', userId)

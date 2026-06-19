@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import pb from '@/lib/pocketbase/client'
+import { SubscriptionStatusBar } from '@/components/subscription/SubscriptionStatusBar'
 
 const NAV_LINKS = [
   { name: 'Início', path: '/home' },
@@ -29,6 +30,9 @@ export default function Layout() {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const isAgency = user?.is_agency === true
+  const navLinks = [...NAV_LINKS, ...(isAgency ? [{ name: 'Agência', path: '/agencia' }] : [])]
 
   const handleLogout = () => {
     signOut()
@@ -53,14 +57,14 @@ export default function Layout() {
               <MessageCircle className="w-5 h-5 fill-current" />
             </div>
             <span className="font-serif font-bold text-lg text-primary tracking-tight">
-              Conectado
+              LeadScale
             </span>
           </Link>
 
           {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-1 px-4">
             <div className="w-px h-6 bg-border mx-2" />
-            {NAV_LINKS.map((link) => {
+            {navLinks.map((link) => {
               const isActive = location.pathname.startsWith(link.path)
               return (
                 <Link
@@ -137,7 +141,7 @@ export default function Layout() {
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-sm md:hidden pt-24 px-4 flex flex-col gap-4 animate-fade-in-down">
-          {NAV_LINKS.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.path}
               to={link.path}
@@ -164,8 +168,15 @@ export default function Layout() {
         </div>
       )}
 
+      {/* Subscription Status Bar */}
+      <div className="fixed top-[72px] inset-x-0 z-40 flex justify-center px-4">
+        <div className="w-full max-w-5xl">
+          <SubscriptionStatusBar />
+        </div>
+      </div>
+
       {/* Main Content Area */}
-      <div className="flex-1 pt-24 pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full z-10">
+      <div className="flex-1 pt-32 pb-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full z-10">
         <Outlet />
       </div>
     </main>

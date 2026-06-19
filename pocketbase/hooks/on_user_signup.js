@@ -38,5 +38,30 @@ onRecordCreate((e) => {
     member.set('joined_at', new Date().toISOString())
 
     $app.save(member)
+
+    // Assign Trial Plan
+    try {
+      const trialPlan = $app.findFirstRecordByData('plans', 'name', 'Trial')
+      if (trialPlan) {
+        const subsCol = $app.findCollectionByNameOrId('subscriptions')
+        const sub = new Record(subsCol)
+        sub.set('account_id', account.id)
+        sub.set('plan_id', trialPlan.id)
+
+        const now = new Date()
+        sub.set('start_date', now.toISOString().replace('T', ' '))
+
+        const end = new Date()
+        end.setDate(end.getDate() + trialPlan.getInt('expiration_days'))
+        sub.set('end_date', end.toISOString().replace('T', ' '))
+
+        sub.set('message_count', 0)
+        sub.set('status', 'trial')
+
+        $app.save(sub)
+      }
+    } catch (err) {
+      $app.logger().error('Error assigning trial plan', 'error', err.message)
+    }
   }
 }, 'users')

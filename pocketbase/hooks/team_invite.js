@@ -43,6 +43,43 @@ routerAdd(
       return e.badRequestError('User is already invited.')
     } catch (err) {}
 
+    // Check plan limits
+    try {
+      const sub = $app.findFirstRecordByFilter('subscriptions', 'account_id = {:accId}', {
+        accId: account.id,
+      })
+      const plan = $app.findRecordById('plans', sub.getString('plan_id'))
+
+      const endStr = sub.getString('end_date')
+      if (endStr && new Date(endStr) < new Date()) {
+        return e.forbiddenError('Plano expirado.')
+      }
+
+      const activeMembers = $app.findRecordsByFilter(
+        'account_members',
+        'account_id = {:accId}',
+        '',
+        1000,
+        0,
+        { accId: account.id },
+      )
+      const activeInvites = $app.findRecordsByFilter(
+        'account_invites',
+        'account_id = {:accId}',
+        '',
+        1000,
+        0,
+        { accId: account.id },
+      )
+
+      const maxUsers = plan.getInt('max_users')
+      if (activeMembers.length + activeInvites.length >= maxUsers) {
+        return e.forbiddenError('Limite de usuários do plano atingido.')
+      }
+    } catch (err) {
+      if (err.statusCode) return err
+    }
+
     const invitesCol = $app.findCollectionByNameOrId('account_invites')
     const invite = new Record(invitesCol)
     invite.set('account_id', account.id)
