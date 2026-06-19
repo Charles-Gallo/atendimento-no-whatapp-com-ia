@@ -51,7 +51,112 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from 'sonner'
+
+const COMMON_EMOJIS = [
+  '😀',
+  '😃',
+  '😄',
+  '😁',
+  '😆',
+  '😅',
+  '😂',
+  '🤣',
+  '🥲',
+  '☺️',
+  '😊',
+  '😇',
+  '🙂',
+  '🙃',
+  '😉',
+  '😌',
+  '😍',
+  '🥰',
+  '😘',
+  '😗',
+  '😙',
+  '😚',
+  '😋',
+  '😛',
+  '😝',
+  '😜',
+  '🤪',
+  '🤨',
+  '🧐',
+  '🤓',
+  '😎',
+  '🥸',
+  '🤩',
+  '🥳',
+  '😏',
+  '😒',
+  '😞',
+  '😔',
+  '😟',
+  '😕',
+  '🙁',
+  '☹️',
+  '😣',
+  '😖',
+  '😫',
+  '😩',
+  '🥺',
+  '😢',
+  '😭',
+  '😤',
+  '😠',
+  '😡',
+  '🤬',
+  '🤯',
+  '😳',
+  '🥵',
+  '🥶',
+  '😱',
+  '😨',
+  '😰',
+  '😥',
+  '😓',
+  '🤗',
+  '🤔',
+  '🤭',
+  '🤫',
+  '🤥',
+  '😶',
+  '😐',
+  '👍',
+  '👎',
+  '✌️',
+  '🤞',
+  '🫰',
+  '🤟',
+  '🤘',
+  '🤌',
+  '🤏',
+  '🫳',
+  '🫴',
+  '👈',
+  '👉',
+  '👆',
+  '👇',
+  '☝️',
+  '✋',
+  '🤚',
+  '🖐',
+  '🖖',
+  '👋',
+  '🤙',
+  '💪',
+  '🖕',
+  '✍️',
+  '🙏',
+  '❤️',
+  '💔',
+  '❤️‍🔥',
+  '💯',
+  '✅',
+]
 
 // Detecta URLs em texto e renderiza como hyperlink colorido. Sem dependência
 // externa — regex simples cobre http(s) URLs. Quando o texto vem com link,
@@ -271,6 +376,7 @@ export function ChatArea({
   >(null)
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const textAreaRef = useRef<HTMLTextAreaElement>(null)
 
   const [isInCrm, setIsInCrm] = useState(false)
   const [isAddingCrm, setIsAddingCrm] = useState(false)
@@ -1268,14 +1374,51 @@ export function ChatArea({
 
         {!isRecording && (
           <>
-            <Button
-              variant="ghost"
-              size="icon"
-              disabled={isSending}
-              className="rounded-full shrink-0 text-muted-foreground hover:text-primary"
-            >
-              <Smile className="w-6 h-6" />
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  disabled={isSending}
+                  className="rounded-full shrink-0 text-muted-foreground hover:text-primary"
+                >
+                  <Smile className="w-6 h-6" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent side="top" align="start" className="w-72 p-2 mb-2" sideOffset={12}>
+                <ScrollArea className="h-64">
+                  <div className="grid grid-cols-6 gap-1">
+                    {COMMON_EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          if (textAreaRef.current) {
+                            const start = textAreaRef.current.selectionStart
+                            const end = textAreaRef.current.selectionEnd
+                            const text = inputText
+                            const newText = text.substring(0, start) + emoji + text.substring(end)
+                            setInputText(newText)
+                            setTimeout(() => {
+                              if (textAreaRef.current) {
+                                textAreaRef.current.selectionStart =
+                                  textAreaRef.current.selectionEnd = start + emoji.length
+                                textAreaRef.current.focus()
+                              }
+                            }, 0)
+                          } else {
+                            setInputText((prev) => prev + emoji)
+                          }
+                        }}
+                        className="flex items-center justify-center h-8 w-8 text-xl rounded-md hover:bg-black/5 transition-colors"
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -1324,6 +1467,7 @@ export function ChatArea({
               className="flex-1 flex items-end gap-2 bg-background rounded-2xl border border-border px-1 focus-within:ring-2 focus-within:ring-primary/20 transition-all"
             >
               <textarea
+                ref={textAreaRef}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 disabled={isSending}

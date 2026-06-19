@@ -32,7 +32,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Edit2, Play, Pause, Save, Shield } from 'lucide-react'
+import { Edit2, Play, Pause, Save, Shield, Trash2, Loader2 } from 'lucide-react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 
 function PlansManager() {
   const [plans, setPlans] = useState<Plan[]>([])
@@ -81,7 +92,11 @@ function PlansManager() {
               <TableCell>{p.expiration_days}</TableCell>
               <TableCell>{p.max_users}</TableCell>
               <TableCell>{p.max_messages_month}</TableCell>
-              <TableCell>R$ {p.price_monthly || 0}</TableCell>
+              <TableCell>
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                  p.price_monthly || 0,
+                )}
+              </TableCell>
               <TableCell>
                 <span
                   className={`px-2 py-1 rounded-full text-xs ${p.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
@@ -165,12 +180,13 @@ function PlanDialog({ planToEdit, onSaved }: { planToEdit?: Plan; onSaved: () =>
               />
             </div>
             <div>
-              <Label>Preço (R$)</Label>
+              <Label>Valor do plano</Label>
               <Input
                 type="number"
+                step="0.01"
                 value={formData.price_monthly || ''}
                 onChange={(e) =>
-                  setFormData({ ...formData, price_monthly: Number(e.target.value) })
+                  setFormData({ ...formData, price_monthly: parseFloat(e.target.value) || 0 })
                 }
               />
             </div>
@@ -287,6 +303,24 @@ function CustomerDialog({ sub, plans, onSaved }: { sub: any; plans: Plan[]; onSa
   const [open, setOpen] = useState(false)
   const [planId, setPlanId] = useState(sub.plan_id)
   const [addDaysVal, setAddDaysVal] = useState('30')
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const acc = sub.expand?.account_id
+  const owner = acc?.expand?.owner_id
+
+  const handleDeleteClient = async () => {
+    if (!acc?.id) return
+    setIsDeleting(true)
+    try {
+      await pb.send(`/backend/v1/accounts-cascade/${acc.id}`, { method: 'DELETE' })
+      setOpen(false)
+      onSaved()
+    } catch (e: any) {
+      console.error(e)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   const handleSavePlan = async () => {
     try {
@@ -330,12 +364,22 @@ function CustomerDialog({ sub, plans, onSaved }: { sub: any; plans: Plan[]; onSa
           <Edit2 className="w-4 h-4 mr-2" /> Gerenciar
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Gerenciar Assinatura</DialogTitle>
+          <DialogTitle>Ficha do Cliente</DialogTitle>
         </DialogHeader>
 
-        <div className="grid gap-6 py-4">
+        <div className="mb-2 bg-primary/5 p-4 rounded-lg border border-primary/10">
+          <div className="font-bold text-xl text-primary">{acc?.name || 'Conta sem nome'}</div>
+          <div className="text-sm text-muted-foreground mt-1">
+            <strong>Admin:</strong> {owner?.name || 'Sem nome'}
+          </div>
+          <div className="text-sm text-muted-foreground">
+            <strong>Email:</strong> {owner?.email || 'Email não disponível'}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-2">
           <div className="space-y-4 border p-4 rounded-lg bg-muted/30">
             <h3 className="font-semibold text-sm">Mudar Plano</h3>
             <Select value={planId} onValueChange={setPlanId}>
@@ -371,6 +415,38 @@ function CustomerDialog({ sub, plans, onSaved }: { sub: any; plans: Plan[]; onSa
               </Button>
             </div>
           </div>
+        </div>
+
+        <div className="mt-4 border-t pt-4">
+          <h3 className="text-sm font-semibold text-destructive mb-2">Zona de Perigo</h3>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" className="w-full sm:w-auto">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Excluir cliente definitivamente
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. Tem certeza que deseja excluir{' '}
+                  <strong>{acc?.name}</strong> e todos os seus dados? Isso irá deletar todas as
+                  instâncias do WhatsApp, mensagens, contatos, tarefas e assinaturas associadas a
+                  esta conta.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteClient}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Sim, excluir tudo'}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </DialogContent>
     </Dialog>
