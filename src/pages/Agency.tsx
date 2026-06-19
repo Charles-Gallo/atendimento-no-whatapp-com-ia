@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Edit2, Shield, Trash2, Loader2, XCircle, PauseCircle } from 'lucide-react'
+import { Edit2, Shield, Trash2, Loader2, XCircle, PauseCircle, PlayCircle } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +45,7 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import { useRealtime } from '@/hooks/use-realtime'
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value || 0)
@@ -116,6 +117,10 @@ function ClientsManager() {
   useEffect(() => {
     loadData()
   }, [])
+
+  useRealtime('subscriptions', () => {
+    loadData()
+  })
 
   return (
     <Card className="border-slate-200 shadow-sm rounded-2xl overflow-hidden">
@@ -369,17 +374,28 @@ function ClientManagerDialog({
               <div className="pt-5 mt-auto border-t border-slate-100">
                 <h4 className="font-semibold text-sm text-blue-950 mb-3">Controles da Conta</h4>
                 <div className="flex gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleStatusChange('paused')}
-                    className="flex-1 rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50"
-                  >
-                    <PauseCircle className="w-4 h-4 mr-2" /> Pausar
-                  </Button>
+                  {subscription.status === 'paused' || subscription.status === 'inactive' ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleStatusChange('active')}
+                      className="flex-1 rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50"
+                    >
+                      <PlayCircle className="w-4 h-4 mr-2" /> Ativar
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => handleStatusChange('paused')}
+                      className="flex-1 rounded-xl border-amber-200 text-amber-700 hover:bg-amber-50"
+                    >
+                      <PauseCircle className="w-4 h-4 mr-2" /> Pausar
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     onClick={() => handleStatusChange('inactive')}
-                    className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    className="flex-1 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={subscription.status === 'inactive'}
                   >
                     <XCircle className="w-4 h-4 mr-2" /> Desativar
                   </Button>
