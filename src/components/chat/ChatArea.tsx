@@ -56,71 +56,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 
-const Smile = React.forwardRef<SVGSVGElement, any>((props, ref) => {
-  const [open, setOpen] = useState(false)
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <SmileIcon
-          {...props}
-          ref={ref}
-          onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            setOpen(!open)
-          }}
-          className={cn(props.className, 'cursor-pointer pointer-events-auto')}
-        />
-      </PopoverTrigger>
-      <PopoverContent
-        side="top"
-        align="start"
-        className="w-80 p-2 border-slate-200 z-50 shadow-xl rounded-2xl"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <ScrollArea className="h-64">
-          <div className="grid grid-cols-8 gap-1">
-            {COMMON_EMOJIS.map((emoji, i) => (
-              <button
-                key={i}
-                type="button"
-                className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-slate-100 text-lg transition-colors"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  const input = document.querySelector('textarea, input[type="text"]') as
-                    | HTMLInputElement
-                    | HTMLTextAreaElement
-                  if (input) {
-                    const start = input.selectionStart || 0
-                    const end = input.selectionEnd || 0
-                    const val = input.value
-                    input.value = val.substring(0, start) + emoji + val.substring(end)
-                    input.selectionStart = input.selectionEnd = start + emoji.length
-
-                    const nativeInputValueSetter =
-                      Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, 'value')
-                        ?.set ||
-                      Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')
-                        ?.set
-                    nativeInputValueSetter?.call(input, input.value)
-                    input.dispatchEvent(new Event('input', { bubbles: true }))
-                    input.focus()
-                  }
-                  setOpen(false)
-                }}
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
-  )
-})
-Smile.displayName = 'Smile'
-
 const COMMON_EMOJIS = [
   '😀',
   '😃',
@@ -1452,7 +1387,7 @@ export function ChatArea({
                         disabled={isSending}
                         className="rounded-full shrink-0 text-muted-foreground hover:text-primary"
                       >
-                        <Smile className="w-6 h-6" />
+                        <SmileIcon className="w-6 h-6" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent

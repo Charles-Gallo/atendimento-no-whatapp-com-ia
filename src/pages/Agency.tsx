@@ -102,9 +102,7 @@ function ClientsManager() {
   const loadData = async () => {
     try {
       const [subsList, plansList] = await Promise.all([
-        pb
-          .collection('subscriptions')
-          .getFullList({ expand: 'account_id,plan_id,account_id.owner_id' }),
+        pb.collection('subscriptions').getFullList({ expand: 'account_id.owner_id,plan_id' }),
         pb.collection('plans').getFullList(),
       ])
       setSubs(subsList)
@@ -154,7 +152,8 @@ function ClientsManager() {
               const plan = s.expand?.plan_id
               const owner = account?.expand?.owner_id
 
-              const accountName = account?.name?.replace(/^Conta de\s+/i, '') || 'Desconhecido'
+              const accountName =
+                account?.name?.replace(/^(Conta( de)?:\s*|Conta de\s+)/i, '') || 'Desconhecido'
               const adminName = owner?.name || 'Admin'
               const adminEmail = owner?.email || 'Email não disponível'
 
@@ -227,12 +226,26 @@ function ClientManagerDialog({
   const account = subscription.expand?.account_id
   const owner = account?.expand?.owner_id
 
-  const accountName = account?.name?.replace(/^Conta de\s+/i, '') || 'Desconhecido'
+  const accountName =
+    account?.name?.replace(/^(Conta( de)?:\s*|Conta de\s+)/i, '') || 'Desconhecido'
   const adminName = owner?.name || 'Admin'
   const adminEmail = owner?.email || 'Email não disponível'
 
   const [selectedPlan, setSelectedPlan] = useState(subscription.plan_id)
-  const [addDaysVal, setAddDaysVal] = useState(30)
+  const handleUpdateEndDate = async (newDateStr: string) => {
+    try {
+      if (!newDateStr) return
+      const newEnd = new Date(newDateStr)
+      newEnd.setUTCHours(23, 59, 59, 999)
+      await pb.collection('subscriptions').update(subscription.id, {
+        end_date: newEnd.toISOString(),
+      })
+      toast({ title: 'Data de expiração atualizada!' })
+      onSaved()
+    } catch (e) {
+      toast({ title: 'Erro ao atualizar data', variant: 'destructive' })
+    }
+  }
 
   const handleApplyPlan = async () => {
     try {
@@ -254,22 +267,6 @@ function ClientManagerDialog({
       onSaved()
     } catch (e) {
       toast({ title: 'Erro ao atualizar plano', variant: 'destructive' })
-    }
-  }
-
-  const handleAddDays = async () => {
-    try {
-      const currentEnd = subscription.end_date ? new Date(subscription.end_date) : new Date()
-      const newEnd = addDays(currentEnd, addDaysVal)
-
-      await pb.collection('subscriptions').update(subscription.id, {
-        end_date: newEnd.toISOString(),
-      })
-
-      toast({ title: 'Dias adicionados com sucesso!' })
-      onSaved()
-    } catch (e) {
-      toast({ title: 'Erro ao adicionar dias', variant: 'destructive' })
     }
   }
 
@@ -353,22 +350,18 @@ function ClientManagerDialog({
             </div>
 
             <div className="border border-slate-200 rounded-2xl p-6 space-y-5 bg-white shadow-sm flex flex-col">
-              <h4 className="font-bold text-lg text-blue-950 mb-2">
-                Extender Data (Manter Plano Atual)
-              </h4>
-              <div className="flex gap-3">
+              <h4 className="font-bold text-lg text-blue-950 mb-2">Data de Expiração</h4>
+              <div className="flex gap-3 items-center">
                 <Input
-                  type="number"
-                  value={addDaysVal}
-                  onChange={(e) => setAddDaysVal(Number(e.target.value))}
-                  className="w-24 h-11 border-slate-300 rounded-xl"
+                  type="date"
+                  value={
+                    subscription.end_date
+                      ? format(parseISO(subscription.end_date), 'yyyy-MM-dd')
+                      : ''
+                  }
+                  onChange={(e) => handleUpdateEndDate(e.target.value)}
+                  className="h-11 border-slate-300 rounded-xl flex-1"
                 />
-                <Button
-                  onClick={handleAddDays}
-                  className="flex-1 h-11 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-medium shadow-md"
-                >
-                  Adicionar Dias
-                </Button>
               </div>
 
               <div className="pt-5 mt-auto border-t border-slate-100">
