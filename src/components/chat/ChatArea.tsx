@@ -53,6 +53,7 @@ import {
 } from '@/components/ui/dialog'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { toast } from 'sonner'
 
 const COMMON_EMOJIS = [
@@ -1376,14 +1377,28 @@ export function ChatArea({
           <>
             <Popover>
               <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  disabled={isSending}
-                  className="rounded-full shrink-0 text-muted-foreground hover:text-primary"
-                >
-                  <Smile className="w-6 h-6" />
-                </Button>
+                <span className="inline-flex">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        disabled={isSending}
+                        className="rounded-full shrink-0 text-muted-foreground hover:text-primary"
+                      >
+                        <Smile className="w-6 h-6" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="top"
+                      className="text-xs border border-border shadow-sm bg-background text-foreground"
+                      sideOffset={10}
+                    >
+                      <p>Emojis (Win + . ou Cmd + Ctrl + Espaço)</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </span>
               </PopoverTrigger>
               <PopoverContent side="top" align="start" className="w-72 p-2 mb-2" sideOffset={12}>
                 <ScrollArea className="h-64">

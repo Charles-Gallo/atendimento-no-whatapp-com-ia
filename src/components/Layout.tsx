@@ -32,7 +32,15 @@ export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const isAgency = user?.is_agency === true
-  const navLinks = [...NAV_LINKS, ...(isAgency ? [{ name: 'Agência', path: '/agencia' }] : [])]
+  const navLinks = [
+    ...NAV_LINKS,
+    ...(isAgency
+      ? [
+          { name: 'Agência', path: '/agencia' },
+          { name: 'Dashboard SaaS', path: '/agencia/dashboard' },
+        ]
+      : []),
+  ]
 
   const handleLogout = () => {
     signOut()

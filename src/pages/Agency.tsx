@@ -180,15 +180,21 @@ function PlanDialog({ planToEdit, onSaved }: { planToEdit?: Plan; onSaved: () =>
               />
             </div>
             <div>
-              <Label>Valor do plano</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={formData.price_monthly || ''}
-                onChange={(e) =>
-                  setFormData({ ...formData, price_monthly: parseFloat(e.target.value) || 0 })
-                }
-              />
+              <Label>Valor do plano (Mensal)</Label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                  R$
+                </span>
+                <Input
+                  type="number"
+                  step="0.01"
+                  className="pl-8"
+                  value={formData.price_monthly || ''}
+                  onChange={(e) =>
+                    setFormData({ ...formData, price_monthly: parseFloat(e.target.value) || 0 })
+                  }
+                />
+              </div>
             </div>
             <div>
               <Label>Máx Usuários</Label>
@@ -249,7 +255,9 @@ function CustomersManager() {
         <TableHeader>
           <TableRow>
             <TableHead>Cliente</TableHead>
+            <TableHead>Administrador</TableHead>
             <TableHead>Plano</TableHead>
+            <TableHead>Valor Mensal</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Expira em</TableHead>
             <TableHead>Mensagens</TableHead>
@@ -266,14 +274,20 @@ function CustomersManager() {
             return (
               <TableRow key={s.id}>
                 <TableCell>
-                  <div className="font-medium">
-                    {owner?.name || owner?.email || 'Cliente sem nome'}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="font-medium text-slate-800">{acc?.name || 'Conta sem nome'}</div>
+                </TableCell>
+                <TableCell>
+                  <div className="text-sm text-slate-600">
                     {owner?.email || 'Email não disponível'}
                   </div>
+                  <div className="text-xs text-muted-foreground">{owner?.name || ''}</div>
                 </TableCell>
                 <TableCell>{plan?.name}</TableCell>
+                <TableCell className="font-medium text-slate-700">
+                  {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                    plan?.price_monthly || 0,
+                  )}
+                </TableCell>
                 <TableCell>
                   <span
                     className={`px-2 py-1 rounded-full text-xs ${isExpired ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}
@@ -389,7 +403,11 @@ function CustomerDialog({ sub, plans, onSaved }: { sub: any; plans: Plan[]; onSa
               <SelectContent>
                 {plans.map((p) => (
                   <SelectItem key={p.id} value={p.id}>
-                    {p.name} ({p.expiration_days} dias, {p.max_messages_month} msgs)
+                    {p.name} -{' '}
+                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
+                      p.price_monthly || 0,
+                    )}{' '}
+                    ({p.expiration_days} dias)
                   </SelectItem>
                 ))}
               </SelectContent>
