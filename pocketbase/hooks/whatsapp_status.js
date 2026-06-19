@@ -22,7 +22,18 @@ routerAdd(
         },
       )
     } catch (_) {
-      return e.notFoundError('Instância não encontrada para este usuário')
+      try {
+        let accountId = ''
+        const member = $app.findFirstRecordByFilter('account_members', 'user_id = {:userId}', {
+          userId: e.auth.id,
+        })
+        accountId = member.getString('account_id')
+        record = $app.findFirstRecordByFilter('whatsapp_instances', 'account_id = {:accountId}', {
+          accountId,
+        })
+      } catch (__) {
+        return e.notFoundError('Instância não configurada para este usuário')
+      }
     }
 
     const headers = { apikey: apiKey }

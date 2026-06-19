@@ -5,6 +5,33 @@ routerAdd(
     const body = e.requestInfo().body || {}
     let instanceName = body.instanceName
 
+    let accountId = ''
+    try {
+      const member = $app.findFirstRecordByFilter('account_members', 'user_id = {:userId}', {
+        userId: e.auth.id,
+      })
+      accountId = member.getString('account_id')
+    } catch (_) {}
+
+    let existingRecord
+    try {
+      if (accountId) {
+        existingRecord = $app.findFirstRecordByFilter(
+          'whatsapp_instances',
+          'account_id = {:accountId}',
+          { accountId },
+        )
+      } else {
+        existingRecord = $app.findFirstRecordByFilter('whatsapp_instances', 'user_id = {:userId}', {
+          userId: e.auth.id,
+        })
+      }
+    } catch (_) {}
+
+    if (existingRecord) {
+      instanceName = existingRecord.getString('instance_name')
+    }
+
     if (!instanceName) {
       instanceName = 'wapp_' + e.auth.id + '_' + Date.now()
     }
@@ -126,30 +153,24 @@ routerAdd(
       return e.badRequestError('QR Code não retornado pela Evolution API.')
     }
 
-    let record
-    try {
-      record = $app.findFirstRecordByFilter(
-        'whatsapp_instances',
-        'user_id = {:userId} && instance_name = {:name}',
-        {
-          userId: e.auth.id,
-          name: instanceName,
-        },
-      )
-    } catch (_) {
-      let accountId = ''
+    let record = existingRecord
+    if (!record) {
       try {
-        const member = $app.findFirstRecordByFilter('account_members', 'user_id = {:userId}', {
-          userId: e.auth.id,
-        })
-        accountId = member.getString('account_id')
-      } catch (_) {}
-
-      const col = $app.findCollectionByNameOrId('whatsapp_instances')
-      record = new Record(col)
-      record.set('user_id', e.auth.id)
-      if (accountId) record.set('account_id', accountId)
-      record.set('instance_name', instanceName)
+        record = $app.findFirstRecordByFilter(
+          'whatsapp_instances',
+          'user_id = {:userId} && instance_name = {:name}',
+          {
+            userId: e.auth.id,
+            name: instanceName,
+          },
+        )
+      } catch (_) {
+        const col = $app.findCollectionByNameOrId('whatsapp_instances')
+        record = new Record(col)
+        record.set('user_id', e.auth.id)
+        if (accountId) record.set('account_id', accountId)
+        record.set('instance_name', instanceName)
+      }
     }
 
     record.set('status', 'qrcode')

@@ -217,7 +217,7 @@ export default function Conversas() {
   }, [diagnosticResult])
 
   useEffect(() => {
-    if (!loadingInstance && (!instance || instance.status !== 'connected')) {
+    if (!loadingInstance && !instance) {
       if (!qrCodeBase64 && !isGenerating && pollErrors === 0) {
         generateQrCode()
       }
@@ -414,13 +414,23 @@ export default function Conversas() {
                   Tentar novamente
                 </Button>
               </div>
+            ) : instance ? (
+              <div className="flex flex-col items-center justify-center space-y-4 p-4 text-center">
+                <QrCode className="w-12 h-12 text-muted-foreground/30" />
+                <p className="text-sm text-muted-foreground font-medium">Aparelho desconectado</p>
+                <Button variant="default" onClick={generateQrCode}>
+                  Gerar novo QR Code
+                </Button>
+              </div>
             ) : (
               <QrCode className="w-16 h-16 text-muted-foreground/30" />
             )}
           </div>
-          <p className="text-sm text-muted-foreground text-balance">
-            Abra o WhatsApp no seu celular, acesse "Aparelhos Conectados" e aponte a câmera.
-          </p>
+          {qrCodeBase64 && (
+            <p className="text-sm text-muted-foreground text-balance">
+              Abra o WhatsApp no seu celular, acesse "Aparelhos Conectados" e aponte a câmera.
+            </p>
+          )}
         </div>
       </div>
     )
